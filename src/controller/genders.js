@@ -1,5 +1,6 @@
 const { response } = require("express");
-const Genero = require("../models/Genero")
+const Genero = require("../models/Genero");
+const Pelicula = require("../models/Pelicula");
 
 const get_genero = async (req, res = response) => {
     const genders = await Genero.findAll();
@@ -40,11 +41,20 @@ const update_genero = async (req, res = response) => {
     const {id, nombre, imagen} = req.body;
     console.log(id, nombre, imagen);
 
-    const gender = await Genero.findOne({where:{id}});
-    if (!gender) {
+    const gender_check = await Genero.findOne({where:{id}});
+    if (!gender_check) {
         return res.status(400).json({
             msg:'No existe un genero registrado con ese id'
         })
+    }
+
+    if (gender_check.nombre !== nombre) {
+        const gender = await Genero.findOne({where:{nombre}});
+        if (gender) {
+            return res.status(400).json({
+                msg: 'El nombre ingresado corresponde a otro genero registrado'
+            })
+        }
     }
 
     await Genero.update({nombre, imagen}, {where:{id}})
@@ -64,6 +74,13 @@ const delete_genero = async (req, res = response) => {
         return res.status(400).json({
             msg:'No existe un genero registrado con ese id'
         });
+    }
+
+    const pelicula = await Pelicula.findOne({where:{GeneroId:id}})
+    if (pelicula) {
+        return res.status(400).json({
+            msg:`El genero esta asociado a la pelicula ${pelicula.titulo}`
+        })
     }
 
     await Genero.destroy({where:{id}});

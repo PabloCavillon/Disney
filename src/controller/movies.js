@@ -5,8 +5,53 @@ const Personaje = require("../models/Personaje");
 const PersonajePelicula = require("../models/PersonajePelicula");
 const { response } = require("../routes/movies");
 
+const get_pelicula_by_id = async id => {
+    const pelicula = await Pelicula.findOne({where:{id}});
+    return new Promise ((resolve, reject) => {
+        if(!pelicula) reject('No existe una pelicula con ese id');
+        resolve(pelicula);
+    })
+}
+
+const get_pelicula_by_name = async titulo => {
+    const pelicula = await Pelicula.findOne({where:{titulo}});
+    return new Promise ((resolve, reject) => {
+        if(!pelicula) reject('No existe una pelicula con ese nombre');
+        resolve(pelicula);
+    })
+}
+
+const get_peliculas_by_genre = async id_genero => {
+    const peliculas = await Pelicula.findAll({where:{GeneroId:id_genero}});
+    return new Promise ((resolve, reject) => {
+        if(!peliculas.length) reject('No existen peliculas con ese genero');
+        resolve(peliculas);
+    })
+}
+
 const get_peliculas = async (req, res = response) => {
-    const peliculas = await Pelicula.findAll();
+    const {id, name, genre, order = 'ASC'} = req.query;
+    
+    if (id) {
+        return get_pelicula_by_id(id)
+            .then(pelicula => res.json({pelicula}))
+            .catch(err => res.status(400).json({msg: 'No existe una pelicula con ese id'}))
+    }
+
+    if (name) {
+        return get_pelicula_by_name(name)
+            .then(pelicula => res.json({pelicula}))
+            .catch(err => res.status(400).json({msg: 'No existe una pelicula con ese nombre'}))
+    }
+
+    if (genre) {
+        return get_peliculas_by_genre(genre)
+            .then(pelicula => res.json({pelicula}))
+            .catch(err => res.status(400).json({msg: 'No existe una pelicula con ese genero'}))
+    }
+
+    const peliculas = await Pelicula.findAll({order:[['titulo', order]]});
+
     res.json({
         peliculas
     })
@@ -63,7 +108,7 @@ const create_pelicula = async (req, res = response) => {
 
 const editar_pelicula = async (req, res = response) => {
 
-    const { id, titulo, fecha_creacion, calificacion, imagen } = req.body;
+    const { id, titulo, fecha_creacion, calificacion, imagen, id_genero } = req.body;
     
     const pelicula_check = await Pelicula.findOne({where:{id}});
 
@@ -73,7 +118,25 @@ const editar_pelicula = async (req, res = response) => {
         })
     }
 
-    await Pelicula.update({titulo, fecha_creacion, calificacion, imagen}, {where:{id}});
+    if (pelicula_check.titulo !== titulo) {
+        const pelicula = await Pelicula.findOne({where:{titulo}});
+        if ( pelicula ) {
+            return res.status(400).json({
+                msg: 'El titulo pertence a otra pelicula ya registrada'
+            })
+        }
+    }
+
+    if(pelicula_check.GeneroId !== id_genero) {
+        const genero_check = await Genero.findOne({where:{id:id_genero}});
+        if (!genero_check) {
+            return res.status(400).json({
+                msg:'El id ingresado no corresponde a ningun genero registrado'
+            })
+        }
+    }
+
+    await Pelicula.update({titulo, fecha_creacion, calificacion, imagen, GeneroId:id_genero}, {where:{id}});
     const pelicula = await Pelicula.findOne({where:{id}});
 
     res.json({
@@ -92,7 +155,8 @@ const eliminar_pelicula = async (req, res = response) => {
             msg: 'El id no pertenece a ninguna pelicula resgistrada'
         });
     }
-
+    
+    await PersonajePelicula.destroy({where:{PeliculaId:id}})
     await Pelicula.destroy({where:{id}});
 
     res.json({
