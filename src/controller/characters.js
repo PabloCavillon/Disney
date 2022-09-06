@@ -4,72 +4,74 @@ const Personaje = require("../models/Personaje");
 const PersonajePelicula = require("../models/PersonajePelicula");
 
 const get_personajes = async (req, res = response) => {
-    //const personajes = await Personaje.findAll({attributes:['nombre', 'imagen']});
     
-    res.json({
-        datos: req.query
-    });
-}
-
-const get_personaje_by_id = async (req, res = response) => {
-    console.log('id')
-    const {id} =  req.query;
+    const {id, name, age, movie} =  req.query;
     
-    personaje = await Personaje.findOne({where:{id}});
-    if (!personaje) {
-        return res.status(400).json({
-            msg: 'No existe un personaje registrado con ese id'
-        })
+    if ( id ) {
+        return get_personaje_by_id(id)
+            .then(personaje => { res.json({ personaje }) })
+            .catch(err => res.status(400).json({msg: err}));
     }
 
-    res.json({
-        personaje
-    });
-}
-
-const get_personajes_by_age = async (req, res = response) => {
-    console.log('age')
-    const {age:edad} =  req.query;
-    
-    personaje = await Personaje.findOne({where:{edad}});
-    if (!personaje) {
-        return res.status(400).json({
-            msg: 'No existe un personaje registrado con esa edad'
-        })
+    if ( name ) {
+        return get_personaje_by_name(name)
+            .then(personaje => { res.json({ personaje }) })
+            .catch(err => res.status(400).json({msg: err}));
     }
 
-    res.json({ personaje });
-}
-
-const get_personaje_by_name = async (req, res = response) => {
-    console.log('name')
+    if ( age ) {
+        return get_personajes_by_age(age)
+            .then(personaje => { res.json({ personaje }) })
+            .catch(err => res.status(400).json({msg: err}));
+    }
     
-    const {name:nombre} =  req.query;
-    
-    personaje = await Personaje.findOne({where:{nombre}});
-    if (!personaje) {
-        return res.status(400).json({
-            msg: 'No existe un personaje registrado con ese id'
-        })
+    if ( movie ) {
+        return get_personajes_by_idMovie(movie)
+            .then(personajes => { res.json({ personajes }) })
+            .catch(err => res.status(400).json({msg: err}));
     }
 
-    res.json({
-        personaje
-    });
-}
-
-const get_personajes_by_idMovie = async (req, res = response) => {
-    console.log('movie')
-    
-    const {movie:idMovie} =  req.query;
-
-    const personajesId = await PersonajePelicula.findAll({where:{PeliculaId:idMovie}});
-
-    const personajes = await sequelize.query(`SELECT * FROM disney.personajes WHERE id in ${personajesId}`);
-
+    const personajes = await Personaje.findAll({ attributes: ['nombre', 'imagen'] });
     res.json({
         personajes
     });
+}
+
+const get_personaje_by_id = async id => {
+    
+    personaje = await Personaje.findOne({where:{id}});
+    return new Promise((resolve, reject) => {
+        if (!personaje) reject('No existe un personaje registrado con ese id');
+        resolve(personaje);
+    })
+}
+
+const get_personajes_by_age = async edad => {
+    
+    personaje = await Personaje.findOne({where:{edad}});
+    return new Promise((resolve, reject) => {
+        if (!personaje) reject('No existe un personaje registrado con esa edad');
+        resolve(personaje);
+    })
+}
+
+const get_personaje_by_name = async nombre => {
+    personaje = await Personaje.findOne({where:{nombre}});
+    return new Promise((resolve, reject) => {
+        if (!personaje) reject('No existe un personaje registrado con esa nombre');
+        resolve(personaje);
+    })
+}
+
+const get_personajes_by_idMovie =  async idMovie => {
+    console.log("pase!!")
+    const personajesId = await PersonajePelicula.findAll({where:{PeliculaId:idMovie}});
+    const personajes = await Personaje.findAll({where:{id:personajesId}});
+    return new Promise((resolve, reject) => {
+        console.log(personajes)
+        if (!personajes.length) reject('No existen personajes relacionados con esa pelicula');
+        resolve(personajes)
+    })
 }
 
 const create_personaje = async (req, res = response) => {
@@ -136,10 +138,6 @@ const delete_personaje = async (req, res = response) => {
 
 module.exports = {
     get_personajes,
-    get_personaje_by_id,
-    get_personajes_by_age,
-    get_personaje_by_name,
-    get_personajes_by_idMovie,
     create_personaje,
     editar_personaje,
     delete_personaje

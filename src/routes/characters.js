@@ -7,23 +7,11 @@ const {
     create_personaje,
     editar_personaje,
     delete_personaje,
-    get_personaje_by_id,
-    get_personajes_by_age,
-    get_personaje_by_name,
-    get_personajes_by_idMovie
 } = require('../controller/characters');
 
 const router = Router(); 
 
 router.use(validarJWT);
-
-router.get('/:id', get_personaje_by_id);
-
-router.get('/:age', get_personajes_by_age);
-
-router.get('/:name', get_personaje_by_name);
-
-router.get('/:movie', get_personajes_by_idMovie);
 
 router.get('/', get_personajes);
 
