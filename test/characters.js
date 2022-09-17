@@ -59,6 +59,7 @@ describe('Test /characters', async () => {
                 });
             }
         );
+
         it('Debe informar que los parametros fueron ingresados con mal formato o fuera de rango',
             done => {
                 const data = {
@@ -81,6 +82,7 @@ describe('Test /characters', async () => {
                 });
             }
         );
+
         it('Debe informar que falta el token o es invalido', 
             done => {
                 data = {}
@@ -126,8 +128,67 @@ describe('Test /characters', async () => {
     });
 
     // test obtener personaje por id
-    describe('GET /characters/:id', () => {
-        it('Debe devolver el personaje correspndiente al id', 
+    describe('GET /characters?id=id', () => {
+        it('Debe devolver el personaje correspondiente al id', 
+            done => {
+                request(server)
+                .get(`/characters?id=${id}`)
+                .set('x-token', token)
+                .end((err, res = response) => {
+                    res.should.have.status(200);
+                    res.body.personaje.should.be.a('object');
+                    res.body.personaje.should.have.property('nombre').eq('prueba');
+                    res.body.personaje.should.have.property('edad').eq('999');
+                    res.body.personaje.should.have.property('peso').eq('999');
+                    res.body.personaje.should.have.property('historia').eq('Este es un personaje de prueba');
+                    res.body.personaje.should.have.property('imagen').eq('https://fakeimg.pl/300/');
+                    id = res.body.personaje.id;
+                    done();
+                });
+            }
+        );
+    })
+    // test obtener personaje por edad
+    describe('GET /characters?age=edad', () => {
+        it('Debe devolver los personajes correspondiente a la edad', 
+            done => {
+                request(server)
+                .get('/characters?age=999')
+                .set('x-token', token)
+                .end((err, res = response) => {
+                    res.should.have.status(200);
+                    res.body.personajes.should.be.a('array');
+                    done();
+                });
+            }
+        );
+    })
+    // test obtener personaje por nombre
+    describe('GET /characters?name=nombre', () => {
+        it('Debe devolver el personaje correspondiente al nombre', 
+            done => {
+                request(server)
+                .get('/characters?name=prueba')
+                .set('x-token', token)
+                .end((err, res = response) => {
+                    res.should.have.status(200);
+                    res.body.personaje.should.be.a('object');
+                    res.body.personaje.should.have.property('nombre').eq('prueba');
+                    res.body.personaje.should.have.property('edad').eq('999');
+                    res.body.personaje.should.have.property('peso').eq('999');
+                    res.body.personaje.should.have.property('historia').eq('Este es un personaje de prueba');
+                    res.body.personaje.should.have.property('imagen').eq('https://fakeimg.pl/300/');
+                    id = res.body.personaje.id;
+                    done();
+                });
+            }
+        );
+    })
+
+
+    // test obtener personaje por id de pelicula
+    describe('GET /characters?idMovie=idMovie', () => {
+        it('Debe devolver el personaje correspondiente al id de la pelicula', 
             done => {
                 request(server)
                 .get('/characters/')
@@ -141,6 +202,7 @@ describe('Test /characters', async () => {
         );
     })
     // test editar personaje
+
 
     // test eliminar personaje
     describe('DELETE /character', () => {
